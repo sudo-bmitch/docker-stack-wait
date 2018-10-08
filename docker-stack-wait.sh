@@ -2,6 +2,7 @@
 
 # By: Brandon Mitchell <public@bmitch.net>
 # License: MIT
+# Source repo: https://github.com/sudo-bmitch/docker-stack-wait
 
 opt_h=0
 opt_s=5
