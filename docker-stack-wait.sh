@@ -40,7 +40,7 @@ service_state() {
   fi
 }
 
-while getopts 'h' opt; do
+while getopts 'hs:t:' opt; do
   case $opt in
     h) opt_h=1;;
     s) opt_s="$OPTARG";;
