@@ -12,6 +12,7 @@ Help output:
 $ ./docker-stack-wait.sh -h
 docker-stack-wait.sh [opts] stack_name
   -h:     this help message
+  -r:     treat a rollback as successful (by default, a rollback indicates failure)
   -s sec: frequency to poll service state (default 5 sec)
   -t sec: timeout to stop waiting
 ```
@@ -21,7 +22,7 @@ docker-stack-wait.sh [opts] stack_name
 ```bash
 $ docker run --rm -it \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  sudobmitch/docker-stack-wait $STACK_NAME
+  sudobmitch/docker-stack-wait $stack_name
 ```
 
 or with an alias
