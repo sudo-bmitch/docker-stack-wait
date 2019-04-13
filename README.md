@@ -20,16 +20,19 @@ docker-stack-wait.sh [opts] stack_name
 
 ```bash
 $ docker run --rm -it \
-           -v `pwd`/docker-compose.yml:/docker-compose.yml \
-           -v /var/run/docker.sock:/var/run/docker.sock \
-           simplificator/docker-stack-wait $STACK_NAME
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  sudobmitch/docker-stack-wait $STACK_NAME
 ```
 
 or with an alias
 
 ```bash
-$ alias docker-stack-wait='docker run --rm -i -v `pwd`/docker-compose.yml:/docker-compose.yml -v /var/run/docker.sock:/var/run/docker.sock simplificator/docker-stack-wait'
+$ alias docker-stack-wait='docker run --rm -it \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  sudobmitch/docker-stack-wait'
 ```
 
-The respective container is available on [Docker Hub](https://hub.docker.com/r/simplificator/docker-stack-wait) and built with [Docker Hub Automated Builds](https://docs.docker.com/docker-hub/builds/).
+The respective container is available on
+[Docker Hub](https://hub.docker.com/r/sudobmitch/docker-stack-wait) and built
+with [Docker Hub Automated Builds](https://docs.docker.com/docker-hub/builds/).
 
