@@ -4,7 +4,7 @@
 # License: MIT
 # Source repo: https://github.com/sudo-bmitch/docker-stack-wait
 
-trap "{ exit 0; }" TERM INT
+trap "{ exit 1; }" TERM INT
 opt_h=0
 opt_r=0
 opt_s=5
