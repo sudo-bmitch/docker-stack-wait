@@ -11,10 +11,11 @@ Help output:
 ```bash
 $ ./docker-stack-wait.sh -h
 docker-stack-wait.sh [opts] stack_name
-  -h:     this help message
-  -r:     treat a rollback as successful (by default, a rollback indicates failure)
-  -s sec: frequency to poll service state (default 5 sec)
-  -t sec: timeout to stop waiting
+  -h:         this help message
+  -r:         treat a rollback as successful (by default, a rollback indicates failure)
+  -s sec:     frequency to poll service state (default 5 sec)
+  -t sec:     overall timeout to stop waiting
+  -c compose: limit polling to services in a specified compose file
 ```
 
 ## Usage as container

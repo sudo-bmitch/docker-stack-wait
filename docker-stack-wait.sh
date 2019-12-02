@@ -13,10 +13,11 @@ start_epoc=$(date +%s)
 
 usage() {
   echo "$(basename $0) [opts] stack_name"
-  echo "  -h:     this help message"
-  echo "  -r:     treat a rollback as successful (by default, a rollback indicates failure)"
-  echo "  -s sec: frequency to poll service state (default $opt_s sec)"
-  echo "  -t sec: timeout to stop waiting"
+  echo "  -h:         this help message"
+  echo "  -r:         treat a rollback as successful (by default, a rollback indicates failure)"
+  echo "  -s sec:     frequency to poll service state (default $opt_s sec)"
+  echo "  -t sec:     overall timeout to stop waiting"
+  echo "  -c compose: limit polling to services in a specified compose file"
   [ "$opt_h" = "1" ] && exit 0 || exit 1
 }
 check_timeout() {
@@ -42,13 +43,35 @@ service_state() {
     eval cache_${service_safe}=\"\$state\"
   fi
 }
+compose_services() {
+  local prefix=$2
+  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+  # parse compose yaml
+  sed -ne "s|^\($s\):|\1|" \
+      -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+      -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+  awk -F$fs '{
+    indent = length($1)/2;
+    vname[indent] = $2;
+    for (i in vname) {if (i > indent) {delete vname[i]}}
+    if (length($3) > 0) {
+      vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+      printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+    }
+  }' |
+  # filter keys down to individual services
+  grep "services" |
+  awk -F'_' '{print $2}' |
+  uniq
+}
 
-while getopts 'hrs:t:' opt; do
+while getopts 'hrs:t:c:' opt; do
   case $opt in
     h) opt_h=1;;
     r) opt_r=1;;
     s) opt_s="$OPTARG";;
     t) opt_t="$OPTARG";;
+    c) opt_c="$OPTARG";;
   esac
 done
 shift $(expr $OPTIND - 1)
@@ -59,11 +82,27 @@ fi
 
 stack_name=$1
 
+# get service list
+if [ "$opt_c" ]; then
+  if [ -f "$opt_c" ]; then
+    # get service names from compose then query for ids from docker
+    if ! service_ids=$(compose_services "$opt_c" | xargs -i docker service inspect ${stack_name}_{} --format {{.ID}}); then
+      echo "Error: a service defined in '$opt_c' was not found in stack $stack_name"
+      exit 1
+    fi
+  else
+    echo "Error: file '$opt_c' not found"
+    exit 1
+  fi
+else
+  service_ids=$(docker stack services -q "$stack_name")
+fi
+
 # 0 = running, 1 = success, 2 = error
 stack_done=0
 while [ "$stack_done" != "1" ]; do
   stack_done=1
-  for service_id in $(docker stack services -q "${stack_name}"); do
+  for service_id in $service_ids; do
     service_done=1
     service=$(docker service inspect --format '{{.Spec.Name}}' "$service_id")
 
@@ -126,4 +165,5 @@ while [ "$stack_done" != "1" ]; do
     sleep "${opt_s}"
   fi
 done
+ 
  
