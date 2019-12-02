@@ -17,7 +17,7 @@ usage() {
   echo "  -r:         treat a rollback as successful (by default, a rollback indicates failure)"
   echo "  -s sec:     frequency to poll service state (default $opt_s sec)"
   echo "  -t sec:     overall timeout to stop waiting"
-  echo "  -c compose: limit polling to services in a specified compose file"
+  echo "  -c compose: limit polling to services defined in a compose file; may be specified multiple times"
   [ "$opt_h" = "1" ] && exit 0 || exit 1
 }
 check_timeout() {
@@ -71,7 +71,7 @@ while getopts 'hrs:t:c:' opt; do
     r) opt_r=1;;
     s) opt_s="$OPTARG";;
     t) opt_t="$OPTARG";;
-    c) opt_c="$OPTARG";;
+    c) opt_c="${opt_c:+${opt_c} }$OPTARG";;
   esac
 done
 shift $(expr $OPTIND - 1)
@@ -84,16 +84,18 @@ stack_name=$1
 
 # get service list
 if [ "$opt_c" ]; then
-  if [ -f "$opt_c" ]; then
-    # get service names from compose then query for ids from docker
-    if ! service_ids=$(compose_services "$opt_c" | xargs -i docker service inspect ${stack_name}_{} --format {{.ID}}); then
-      echo "Error: a service defined in '$opt_c' was not found in stack $stack_name"
+  for compose_file in $opt_c; do
+    if [ -f "$compose_file" ]; then
+      # get service names from compose(s) then query for ids from docker
+      if ! service_ids="${service_ids:+${service_ids} }$(compose_services "$compose_file" | xargs -i docker service inspect ${stack_name}_{} --format {{.ID}})"; then
+        echo "Error: a service defined in '$compose_file' was not found in stack $stack_name"
+        exit 1
+      fi
+    else
+      echo "Error: file '$opt_c' not found"
       exit 1
     fi
-  else
-    echo "Error: file '$opt_c' not found"
-    exit 1
-  fi
+  done
 else
   service_ids=$(docker stack services -q "$stack_name")
 fi
@@ -165,5 +167,4 @@ while [ "$stack_done" != "1" ]; do
     sleep "${opt_s}"
   fi
 done
- 
  
