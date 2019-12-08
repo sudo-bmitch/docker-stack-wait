@@ -11,13 +11,14 @@ Help output:
 ```bash
 $ ./docker-stack-wait.sh -h
 docker-stack-wait.sh [opts] stack_name
-  -f filter: only wait for services matching filter (see docker stack services)
+  -f filter: only wait for services matching filter, may be passed multiple
+             times, see docker stack services for the filter syntax
   -h:        this help message
-  -n name:   only wait for specific service names (overrides any filters)
-  -r:        treat a rollback as successful (by default, a rollback indicates failure)
+  -n name:   only wait for specific service names, overrides any filters,
+             may be passed multiple times, do not include the stack name prefix
+  -r:        treat a rollback as successful
   -s sec:    frequency to poll service state (default 5 sec)
   -t sec:    timeout to stop waiting
-Options -f and -n may be passed multiple times
 ```
 
 ## Usage as container

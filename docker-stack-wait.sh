@@ -14,13 +14,14 @@ start_epoc=$(date +%s)
 
 usage() {
   echo "$(basename $0) [opts] stack_name"
-  echo "  -f filter: only wait for services matching filter (see docker stack services)"
+  echo "  -f filter: only wait for services matching filter, may be passed multiple"
+  echo "             times, see docker stack services for the filter syntax"
   echo "  -h:        this help message"
-  echo "  -n name:   only wait for specific service names (overrides any filters)"
-  echo "  -r:        treat a rollback as successful (by default, a rollback indicates failure)"
+  echo "  -n name:   only wait for specific service names, overrides any filters,"
+  echo "             may be passed multiple times, do not include the stack name prefix"
+  echo "  -r:        treat a rollback as successful"
   echo "  -s sec:    frequency to poll service state (default $opt_s sec)"
   echo "  -t sec:    timeout to stop waiting"
-  echo "Options -f and -n may be passed multiple times"
   [ "$opt_h" = "1" ] && exit 0 || exit 1
 }
 check_timeout() {
