@@ -4,6 +4,7 @@
 # License: MIT
 # Source repo: https://github.com/sudo-bmitch/docker-stack-wait
 
+set -e
 trap "{ exit 1; }" TERM INT
 opt_h=0
 opt_r=0
@@ -13,10 +14,14 @@ start_epoc=$(date +%s)
 
 usage() {
   echo "$(basename $0) [opts] stack_name"
-  echo "  -h:     this help message"
-  echo "  -r:     treat a rollback as successful (by default, a rollback indicates failure)"
-  echo "  -s sec: frequency to poll service state (default $opt_s sec)"
-  echo "  -t sec: timeout to stop waiting"
+  echo "  -f filter: only wait for services matching filter, may be passed multiple"
+  echo "             times, see docker stack services for the filter syntax"
+  echo "  -h:        this help message"
+  echo "  -n name:   only wait for specific service names, overrides any filters,"
+  echo "             may be passed multiple times, do not include the stack name prefix"
+  echo "  -r:        treat a rollback as successful"
+  echo "  -s sec:    frequency to poll service state (default $opt_s sec)"
+  echo "  -t sec:    timeout to stop waiting"
   [ "$opt_h" = "1" ] && exit 0 || exit 1
 }
 check_timeout() {
@@ -31,6 +36,17 @@ check_timeout() {
     fi
   fi
 }
+get_service_ids() {
+  if [ -n "$opt_n" ]; then
+    service_list=""
+    for name in $opt_n; do
+      service_list="${service_list:+${service_list} }${stack_name}_${name}"
+    done
+    docker service inspect --format '{{.ID}}' ${service_list}
+  else
+    docker stack services ${opt_f} -q "${stack_name}"
+  fi
+}
 service_state() {
   # output the state when it changes from the last state for the service
   service=$1
@@ -43,9 +59,11 @@ service_state() {
   fi
 }
 
-while getopts 'hrs:t:' opt; do
+while getopts 'f:hn:rs:t:' opt; do
   case $opt in
+    f) opt_f="${opt_f:+${opt_f} }-f $OPTARG";;
     h) opt_h=1;;
+    n) opt_n="${opt_n:+${opt_n} } $OPTARG";;
     r) opt_r=1;;
     s) opt_s="$OPTARG";;
     t) opt_t="$OPTARG";;
@@ -63,7 +81,9 @@ stack_name=$1
 stack_done=0
 while [ "$stack_done" != "1" ]; do
   stack_done=1
-  for service_id in $(docker stack services -q "${stack_name}"); do
+  # run get_service_ids outside of the for loop to catch errors
+  service_ids=$(get_service_ids)
+  for service_id in ${service_ids}; do
     service_done=1
     service=$(docker service inspect --format '{{.Spec.Name}}' "$service_id")
 
