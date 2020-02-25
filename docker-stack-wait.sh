@@ -104,7 +104,7 @@ while [ "$stack_done" != "1" ]; do
 
     # identify/report current state
     if [ "$service_done" != "2" ]; then
-      replicas=$(docker service ls --format '{{.Replicas}}' --filter "id=$service_id")
+      replicas=$(docker service ls --format '{{.Replicas}}' --filter "id=$service_id" | cut -d' ' -f1)
       current=$(echo "$replicas" | cut -d/ -f1)
       target=$(echo "$replicas" | cut -d/ -f2)
       if [ "$current" != "$target" ]; then
