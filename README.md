@@ -24,7 +24,7 @@ docker-stack-wait.sh [opts] stack_name
 ## Usage as container
 
 ```bash
-$ docker run --rm -it \
+$ docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   sudobmitch/docker-stack-wait $stack_name
 ```
