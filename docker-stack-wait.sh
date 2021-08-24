@@ -87,8 +87,8 @@ while [ "$stack_done" != "1" ]; do
     service_done=1
     service=$(docker service inspect --format '{{.Spec.Name}}' "$service_id")
 
-    # hardcode a "new" state when UpdateStatus is not defined
-    state=$(docker service inspect -f '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}new{{end}}' "$service_id")
+    # hardcode a "no-updates" state when UpdateStatus is not defined
+    state=$(docker service inspect -f '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}no-updates{{end}}' "$service_id")
 
     # check for failed update states
     case "$state" in
