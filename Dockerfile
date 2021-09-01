@@ -1,4 +1,4 @@
-ARG DOCKER_VER=19.03.0
+ARG DOCKER_VER=stable
 FROM docker:${DOCKER_VER}
 
 COPY docker-stack-wait.sh /

@@ -23,6 +23,13 @@ docker-stack-wait.sh [opts] stack_name
 
 ## Usage as container
 
+An image is available at:
+
+- Docker Hub: `sudobmitch/docker-stack-wait`
+- GHCR: `ghcr.io/sudo-bmitch/docker-stack-wait`
+
+To use this image, you will need to mount the docker socket:
+
 ```bash
 $ docker run --rm -it \
   -v /var/run/docker.sock:/var/run/docker.sock \
@@ -37,16 +44,12 @@ $ alias docker-stack-wait='docker run --rm -it \
   sudobmitch/docker-stack-wait'
 ```
 
-The respective container is available on
-[Docker Hub](https://hub.docker.com/r/sudobmitch/docker-stack-wait) and built
-with [Docker Hub Automated Builds](https://docs.docker.com/docker-hub/builds/).
-
 ## Filter Examples
 
 The `-n` and `-f` options allow to select a subset of the services in a stack.
 With the following compose yml file:
 
-```
+```yaml
 version: '3.7'
 
 services:
@@ -90,13 +93,13 @@ services:
 
 We can wait for only the first two services using labels:
 
-```
+```bash
 docker-stack-wait.sh -f label=deploy.wait=true waittest
 ```
 
 Or by waiting on individual service names:
 
-```
+```bash
 docker-stack-wait.sh -n normal -n slow waittest
 ```
 
@@ -104,11 +107,10 @@ If you deploy a stack using multiple compose files, you can wait for the
 services in a single compose file using the following example that uses
 `docker-compose` to generate a list of services from one file:
 
-```
+```bash
 wait_args=""
 for arg in $(docker-compose -f docker-compose.yml config --services 2>/dev/null); do
   wait_args="${wait_args:+${wait_args} }-n $arg"
 done
 docker-stack-wait.sh $wait_args waittest
 ```
-
