@@ -16,6 +16,8 @@ docker-stack-wait.sh [opts] stack_name
   -h:        this help message
   -n name:   only wait for specific service names, overrides any filters,
              may be passed multiple times, do not include the stack name prefix
+  -p lines:  print last n lines of relevant service logs at end
+             passed to the '--tail' option of docker service logs
   -r:        treat a rollback as successful
   -s sec:    frequency to poll service state (default 5 sec)
   -t sec:    timeout to stop waiting
