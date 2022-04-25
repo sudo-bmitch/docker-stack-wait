@@ -46,6 +46,18 @@ $ alias docker-stack-wait='docker run --rm -it \
   sudobmitch/docker-stack-wait'
 ```
 
+## Development
+
+To test changes to the script easily, you can use the example `example-docker-compose.yml` file with:
+
+```bash
+docker-compose -f dind-docker-compose.yml up
+docker-compose -f dind-docker-compose.yml exec dind sh
+docker node ls || docker swarm init
+docker stack deploy --compose-file work/example-docker-compose.yml the_stack
+./work/docker-stack-wait.sh the_stack
+```
+
 ## Filter Examples
 
 The `-n` and `-f` options allow to select a subset of the services in a stack.

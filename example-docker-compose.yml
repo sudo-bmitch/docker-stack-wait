@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  img1:
+    image: alpine
+    command: sh -c "echo img1 && tail -f /dev/null"
+  img2:
+    image: alpine
+    command: sh -c "echo img2 && tail -f /dev/null"
+  img3:
+    image: alpine
+    command: sh -c "echo img3 starting && sleep 1 && echo img3 started && tail -f /dev/null"

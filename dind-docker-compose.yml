@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  dind:
+    image: docker:dind
+    container_name: dind
+    privileged: true
+    volumes:
+      - .:/work
+    expose:
+      - 2375
+    environment:
+      - DOCKER_TLS_CERTDIR=
+
