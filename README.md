@@ -16,6 +16,8 @@ docker-stack-wait.sh [opts] stack_name
   -h:        this help message
   -n name:   only wait for specific service names, overrides any filters,
              may be passed multiple times, do not include the stack name prefix
+  -p lines:  print last n lines of relevant service logs at end
+             passed to the '--tail' option of docker service logs
   -r:        treat a rollback as successful
   -s sec:    frequency to poll service state (default 5 sec)
   -t sec:    timeout to stop waiting
@@ -42,6 +44,18 @@ or with an alias
 $ alias docker-stack-wait='docker run --rm -it \
   -v /var/run/docker.sock:/var/run/docker.sock \
   sudobmitch/docker-stack-wait'
+```
+
+## Development
+
+To test changes to the script easily, you can use the example `example-docker-compose.yml` file with:
+
+```bash
+docker-compose -f dind-docker-compose.yml up
+docker-compose -f dind-docker-compose.yml exec dind sh
+docker node ls || docker swarm init
+docker stack deploy --compose-file work/example-docker-compose.yml the_stack
+./work/docker-stack-wait.sh the_stack
 ```
 
 ## Filter Examples

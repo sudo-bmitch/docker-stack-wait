@@ -8,6 +8,7 @@ set -e
 trap "{ exit 1; }" TERM INT
 opt_h=0
 opt_r=0
+opt_p=0
 opt_s=5
 opt_t=3600
 start_epoc=$(date +%s)
@@ -19,6 +20,8 @@ usage() {
   echo "  -h:        this help message"
   echo "  -n name:   only wait for specific service names, overrides any filters,"
   echo "             may be passed multiple times, do not include the stack name prefix"
+  echo "  -p lines:  print last n lines of relevant service logs at end"
+  echo "             passed to the '--tail' option of docker service logs"
   echo "  -r:        treat a rollback as successful"
   echo "  -s sec:    frequency to poll service state (default $opt_s sec)"
   echo "  -t sec:    timeout to stop waiting"
@@ -32,6 +35,7 @@ check_timeout() {
     cutoff_epoc=$(expr ${start_epoc} + $opt_t - $opt_s)
     if [ "$cur_epoc" -gt "$cutoff_epoc" ]; then
       echo "Error: Timeout exceeded"
+      print_service_logs
       exit 1
     fi
   fi
@@ -58,12 +62,21 @@ service_state() {
     eval cache_${service_safe}=\"\$state\"
   fi
 }
+print_service_logs() {
+  if [ "$opt_p" != "0" ]; then
+    service_ids=$(get_service_ids)
+    for service_id in ${service_ids}; do
+      docker service logs --tail $opt_p "$service_id"
+    done
+  fi
+}
 
-while getopts 'f:hn:rs:t:' opt; do
+while getopts 'f:hn:p:rs:t:' opt; do
   case $opt in
     f) opt_f="${opt_f:+${opt_f} }-f $OPTARG";;
     h) opt_h=1;;
     n) opt_n="${opt_n:+${opt_n} } $OPTARG";;
+    p) opt_p="$OPTARG";;
     r) opt_r=1;;
     s) opt_s="$OPTARG";;
     t) opt_t="$OPTARG";;
@@ -139,6 +152,7 @@ while [ "$stack_done" != "1" ]; do
   done
   if [ "$stack_done" = "2" ]; then
     echo "Error: This deployment will not complete"
+    print_service_logs
     exit 1
   fi
   if [ "$stack_done" != "1" ]; then
@@ -146,4 +160,5 @@ while [ "$stack_done" != "1" ]; do
     sleep "${opt_s}"
   fi
 done
- 
+
+print_service_logs
