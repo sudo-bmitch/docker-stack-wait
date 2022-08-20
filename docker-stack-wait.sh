@@ -96,6 +96,10 @@ while [ "$stack_done" != "1" ]; do
   stack_done=1
   # run get_service_ids outside of the for loop to catch errors
   service_ids=$(get_service_ids)
+  if [ -z "${service_ids}" ]; then
+    echo "Error: no services found" >&2
+    exit 1
+  fi
   for service_id in ${service_ids}; do
     service_done=1
     service=$(docker service inspect --format '{{.Spec.Name}}' "$service_id")
