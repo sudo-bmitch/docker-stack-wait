@@ -1,11 +1,28 @@
 version: "3.9"
 services:
-  img1:
+  example1:
     image: alpine
-    command: sh -c "echo img1 && tail -f /dev/null"
-  img2:
+    command: sh -c "echo example1 && tail -f /dev/null"
+    deploy:
+      labels:
+        type: service
+  example2:
     image: alpine
-    command: sh -c "echo img2 && tail -f /dev/null"
-  img3:
+    command: sh -c "echo example2 && tail -f /dev/null"
+    deploy:
+      labels:
+        type: service
+  example3:
     image: alpine
-    command: sh -c "echo img3 starting && sleep 1 && echo img3 started && tail -f /dev/null"
+    command: sh -c "echo example3 starting && sleep 1 && echo example3 started && tail -f /dev/null"
+    deploy:
+      labels:
+        type: service
+  expected-exit:
+    image: alpine
+    command: sh -c "sleep 1; exit 0"
+    deploy:
+      labels:
+        type: job
+      restart_policy:
+        condition: on-failure
