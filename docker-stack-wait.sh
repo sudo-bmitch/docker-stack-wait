@@ -12,6 +12,7 @@ opt_p=0
 opt_s=5
 opt_t=3600
 start_epoc=$(date +%s)
+cmd_min_timeout=15
 
 usage() {
   echo "$(basename $0) [opts] stack_name"
@@ -40,6 +41,20 @@ check_timeout() {
     fi
   fi
 }
+cmd_with_timeout() {
+  # run a command that will not exceed the timeout
+  # there is a minimum time all commands are given
+  if [ "$opt_t" -gt 0 ]; then
+    cur_epoc=$(date +%s)
+    remain_timeout=$(expr ${start_epoc} + ${opt_t} - ${cur_epoc})
+    if [ "${remain_timeout}" -lt "${cmd_min_timeout}" ]; then
+      remain_timeout=${cmd_min_timeout}
+    fi
+    timeout ${remain_timeout} "$@"
+  else
+    "$@"
+  fi
+}
 get_service_ids() {
   if [ -n "$opt_n" ]; then
     service_list=""
@@ -66,7 +81,7 @@ print_service_logs() {
   if [ "$opt_p" != "0" ]; then
     service_ids=$(get_service_ids)
     for service_id in ${service_ids}; do
-      docker service logs --tail $opt_p "$service_id"
+      cmd_with_timeout docker service logs --tail $opt_p "$service_id"
     done
   fi
 }
