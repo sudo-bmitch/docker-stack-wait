@@ -28,6 +28,7 @@ usage() {
   echo "  -t sec:    timeout to stop waiting"
   [ "$opt_h" = "1" ] && exit 0 || exit 1
 }
+
 check_timeout() {
   # timeout when a timeout is defined and we will exceed the timeout after the
   # next sleep completes
@@ -35,12 +36,13 @@ check_timeout() {
     cur_epoc=$(date +%s)
     cutoff_epoc=$(expr ${start_epoc} + $opt_t - $opt_s)
     if [ "$cur_epoc" -gt "$cutoff_epoc" ]; then
-      echo "Error: Timeout exceeded"
+      echo "ERROR: Timeout exceeded"
       print_service_logs
       exit 1
     fi
   fi
 }
+
 cmd_with_timeout() {
   # run a command that will not exceed the timeout
   # there is a minimum time all commands are given
@@ -55,6 +57,7 @@ cmd_with_timeout() {
     "$@"
   fi
 }
+
 get_service_ids() {
   if [ -n "$opt_n" ]; then
     service_list=""
@@ -66,6 +69,7 @@ get_service_ids() {
     docker stack services ${opt_f} -q "${stack_name}"
   fi
 }
+
 service_state() {
   # output the state when it changes from the last state for the service
   service=$1
@@ -73,12 +77,14 @@ service_state() {
   service_safe=$(echo "$service" | sed 's/[^A-Za-z0-9_]/_/g')
   state=$2
   if eval [ \"\$cache_${service_safe}\" != \"\$state\" ]; then
-    echo "Service $service state: $state"
+    echo "INFO: Service $service state: $state"
     eval cache_${service_safe}=\"\$state\"
   fi
 }
+
 print_service_logs() {
   if [ "$opt_p" != "0" ]; then
+    echo "INFO: Retrieving last $opt_p service log lines..."
     service_ids=$(get_service_ids)
     for service_id in ${service_ids}; do
       cmd_with_timeout docker service logs --tail $opt_p "$service_id"
@@ -105,61 +111,73 @@ fi
 
 stack_name=$1
 
+echo "INFO: Waiting for stack $stack_name deployment..."
+
 # 0 = running, 1 = success, 2 = error
 stack_done=0
 while [ "$stack_done" != "1" ]; do
   stack_done=1
+
   # run get_service_ids outside of the for loop to catch errors
   service_ids=$(get_service_ids)
+
+
   if [ -z "${service_ids}" ]; then
-    echo "Error: no services found" >&2
+    echo "ERROR: no services found" >&2
     exit 1
   fi
+
   for service_id in ${service_ids}; do
-    service_done=1
+    service_done=0 # unknown
     service=$(docker service inspect --format '{{.Spec.Name}}' "$service_id")
 
-    # hardcode a "deployed" state when UpdateStatus is not defined
-    state=$(docker service inspect -f '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}deployed{{end}}' "$service_id")
+    # hardcode a "unknown" state when UpdateStatus is not defined
+    state=$(docker service inspect -f '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}unknown{{end}}' "$service_id")
 
-    # check for failed update states
+    if [ $state == "unknown" ]; then # Corner case for first stack deployments https://github.com/moby/moby/issues/28012
+      # Checking task status 
+      if [[  $(docker service ps --format '{{ .CurrentState }}' $service_id | grep "Failed")  != "" ]]; then 
+        state="failed"
+      elif [[  $(docker service ps --format '{{ .CurrentState }}' $service_id | grep "Running")  != "" ]]; then 
+        state="unknown" # set to unknown as we override state        
+      elif [[  $(docker service ps --format '{{ .CurrentState }}' $service_id | grep "Complete")  != "" ]]; then 
+        state="completed"
+      # else is not needed as we cover the replica count outisde this corner case    
+      fi    
+    fi
+
     case "$state" in
-      paused|rollback_paused)
+      failed|paused|rollback_paused)
         service_done=2
+        docker service ps --format 'ERROR: {{ .Name }} {{ .CurrentState }}: {{ .Error }}' $service_id  | grep "Failed"
         ;;
-      rollback_*)
+      rollback_completed)
         if [ "$opt_r" = "0" ]; then
           service_done=2
         fi
         ;;
-    esac
-
-    # identify/report current state
-    if [ "$service_done" != "2" ]; then
-      replicas=$(docker service ls --format '{{.Replicas}}' --filter "id=$service_id" | cut -d' ' -f1)
-      current=$(echo "$replicas" | cut -d/ -f1)
-      target=$(echo "$replicas" | cut -d/ -f2)
-      if [ "$current" != "$target" ]; then
-        # actively replicating service
+      deployed|completed)
+        service_done=1
+        ;;
+      *)
+        # any other state is unknown, not necessarily finished
+        replicas=$(docker service ls --format '{{.Replicas}}' --filter "id=$service_id" | cut -d' ' -f1)
+        current=$(echo "$replicas" | cut -d/ -f1)
+        target=$(echo "$replicas" | cut -d/ -f2)
         service_done=0
-        state="replicating $replicas"
-      fi
-    fi
-    service_state "$service" "$state"
-
-    # check for states that indicate an update is done
-    if [ "$service_done" = "1" ]; then
-      case "$state" in
-        deployed|completed|rollback_completed)
-          service_done=1
-          ;;
-        *)
-          # any other state is unknown, not necessarily finished
+        if [ "$current" != "$target" ]; then
+          state="$replicas"
           service_done=0
-          ;;
-      esac
-    fi
+        else
+          state="deployed"
+          service_done=1
+        fi
 
+        ;;        
+    esac   
+
+    service_state "$service" "$state"
+ 
     # update stack done state
     if [ "$service_done" = "2" ]; then
       # error condition
@@ -169,14 +187,16 @@ while [ "$stack_done" != "1" ]; do
       stack_done=0
     fi
   done
+
   if [ "$stack_done" = "2" ]; then
-    echo "Error: This deployment will not complete"
+    echo "ERROR: This deployment has failed"
     print_service_logs
     exit 1
-  fi
-  if [ "$stack_done" != "1" ]; then
+  elif [ "$stack_done" != "1" ]; then
     check_timeout
     sleep "${opt_s}"
+  else
+    echo "INFO: This deployment has succeed"
   fi
 done
 
