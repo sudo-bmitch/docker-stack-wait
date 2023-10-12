@@ -7,8 +7,8 @@
 set -e
 trap "{ exit 1; }" TERM INT
 opt_h=0
+opt_l=""
 opt_r=0
-opt_p=0
 opt_s=5
 opt_t=3600
 start_epoc=$(date +%s)
@@ -19,10 +19,11 @@ usage() {
   echo "  -f filter: only wait for services matching filter, may be passed multiple"
   echo "             times, see docker stack services for the filter syntax"
   echo "  -h:        this help message"
+  echo "  -l flags:  Print logs of relevant services at end."
+  echo "             Flags are passed directly to the end of 'docker service logs'."
+  echo "             Example usage: -l '--tail 20' or -l '--since 20m'"
   echo "  -n name:   only wait for specific service names, overrides any filters,"
   echo "             may be passed multiple times, do not include the stack name prefix"
-  echo "  -p lines:  print last n lines of relevant service logs at end"
-  echo "             passed to the '--tail' option of docker service logs"
   echo "  -r:        treat a rollback as successful"
   echo "  -s sec:    frequency to poll service state (default $opt_s sec)"
   echo "  -t sec:    timeout to stop waiting"
@@ -78,20 +79,21 @@ service_state() {
   fi
 }
 print_service_logs() {
-  if [ "$opt_p" != "0" ]; then
+  if [ "$opt_l" != "0" ]; then
     service_ids=$(get_service_ids)
     for service_id in ${service_ids}; do
-      cmd_with_timeout docker service logs --tail $opt_p "$service_id"
+      cmd_with_timeout docker service logs $opt_l "$service_id"
     done
   fi
 }
 
-while getopts 'f:hn:p:rs:t:' opt; do
+while getopts 'f:hl:n:p:rs:t:' opt; do
   case $opt in
     f) opt_f="${opt_f:+${opt_f} }-f $OPTARG";;
     h) opt_h=1;;
+    l) opt_l="$OPTARG";;
     n) opt_n="${opt_n:+${opt_n} } $OPTARG";;
-    p) opt_p="$OPTARG";;
+    p) opt_l="--tail $OPTARG";; # -p was deprecated in favor of -l
     r) opt_r=1;;
     s) opt_s="$OPTARG";;
     t) opt_t="$OPTARG";;
