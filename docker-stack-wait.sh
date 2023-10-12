@@ -79,7 +79,7 @@ service_state() {
   fi
 }
 print_service_logs() {
-  if [ "$opt_l" != "0" ]; then
+  if [ "$opt_l" != "" ]; then
     service_ids=$(get_service_ids)
     for service_id in ${service_ids}; do
       cmd_with_timeout docker service logs $opt_l "$service_id"
