@@ -14,10 +14,11 @@ docker-stack-wait.sh [opts] stack_name
   -f filter: only wait for services matching filter, may be passed multiple
              times, see docker stack services for the filter syntax
   -h:        this help message
+  -l flags:  Print logs of relevant services at end.
+             Flags are passed directly to the end of 'docker service logs'.
+             Example usage: -l '--tail 20' or -l '--since 20m'
   -n name:   only wait for specific service names, overrides any filters,
              may be passed multiple times, do not include the stack name prefix
-  -p lines:  print last n lines of relevant service logs at end
-             passed to the '--tail' option of docker service logs
   -r:        treat a rollback as successful
   -s sec:    frequency to poll service state (default 5 sec)
   -t sec:    timeout to stop waiting
