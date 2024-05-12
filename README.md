@@ -21,7 +21,7 @@ docker-stack-wait.sh [opts] stack_name
              may be passed multiple times, do not include the stack name prefix
   -r:        treat a rollback as successful
   -s sec:    frequency to poll service state (default 5 sec)
-  -t sec:    timeout to stop waiting
+  -t sec:    timeout to stop waiting (default 3600 sec)
 ```
 
 ## Usage as container

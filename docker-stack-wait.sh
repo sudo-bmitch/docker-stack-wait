@@ -26,7 +26,7 @@ usage() {
   echo "             may be passed multiple times, do not include the stack name prefix"
   echo "  -r:        treat a rollback as successful"
   echo "  -s sec:    frequency to poll service state (default $opt_s sec)"
-  echo "  -t sec:    timeout to stop waiting"
+  echo "  -t sec:    timeout to stop waiting (default $opt_t sec)"
   [ "$opt_h" = "1" ] && exit 0 || exit 1
 }
 check_timeout() {
