@@ -2,6 +2,17 @@
 
 Waits for a docker stack deploy to complete.
 
+## Archive Notice
+
+This project has been archived and is no longer being maintained.
+Docker has added the `--detach` CLI flag which allows similar functionality to be implemented with:
+
+```shell
+docker stack deploy --detach=false -c docker-compose.yaml $stack_name
+```
+
+## CLI Usage
+
 Example Usage:
 
 `docker-stack-wait.sh $stack_name`
