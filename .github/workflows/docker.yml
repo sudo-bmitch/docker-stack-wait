@@ -40,6 +40,7 @@ jobs:
           MAJOR=${MINOR%.*}
           TAGS="${TAGS},${HUB_IMAGE}:${MINOR},${HUB_IMAGE}:${MAJOR},${HUB_IMAGE}:latest,${GHCR_IMAGE}:${MINOR},${GHCR_IMAGE}:${MAJOR},${GHCR_IMAGE}:latest"
         fi
+        VCS_SEC="$(git log -1 --format=%ct)"
         VCS_DATE="$(date -d "@${VCS_SEC}" +%Y-%m-%dT%H:%M:%SZ --utc)"
         echo "version=${VERSION}" >>$GITHUB_OUTPUT
         echo "tags=${TAGS}" >>$GITHUB_OUTPUT
